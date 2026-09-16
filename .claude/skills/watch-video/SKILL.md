@@ -1,5 +1,5 @@
 ---
-name: watch
+name: watch-video
 version: "0.2.0"
 description: Watch a video (URL or local path). Downloads with yt-dlp, extracts auto-scaled frames with ffmpeg, pulls the transcript from captions (or Whisper API fallback), and hands the result to Claude so it can answer questions about what's in the video.
 argument-hint: "<video-url-or-path> [question]"
@@ -11,7 +11,7 @@ license: MIT
 user-invocable: true
 ---
 
-# /watch
+# /watch-video
 
 You don't have a video input; this skill gives you one. A Python script gets captions first, optionally downloads the video, extracts frames as JPEGs (scene-aware, or fast keyframes at `efficient` detail), gets a timestamped transcript (native captions first, then Whisper API as fallback), and prints frame paths. You then `Read` each frame path to see the images and combine them with the transcript to answer the user.
 
@@ -20,9 +20,8 @@ You don't have a video input; this skill gives you one. A Python script gets cap
 Every `python3 ...` command below runs a bundled script under `SKILL_DIR/scripts/`. Set `SKILL_DIR` to the **absolute path of the directory containing THIS SKILL.md you just Read** — your harness told you that path in the Read result. The scripts are always a direct sibling of this file (`SKILL_DIR/scripts/watch.py`), in every install layout:
 
 ```
-Read ~/.claude/plugins/cache/claude-video/watch/<ver>/skills/watch/SKILL.md → SKILL_DIR=…/skills/watch
-Read ~/.codex/skills/watch/SKILL.md                                          → SKILL_DIR=~/.codex/skills/watch
-Read ~/.agents/skills/watch/SKILL.md                                         → SKILL_DIR=~/.agents/skills/watch
+Read <repo>/.claude/skills/watch-video/SKILL.md  → SKILL_DIR=<repo>/.claude/skills/watch-video
+Read ~/.claude/skills/watch-video/SKILL.md       → SKILL_DIR=~/.claude/skills/watch-video
 ```
 
 Substitute that literal path for `${SKILL_DIR}` in every command. This works on every harness (Claude Code, Codex, Cursor, Gemini CLI, …) without relying on any harness-specific environment variable. Guard once at the start of a run:
@@ -36,11 +35,11 @@ if [ ! -f "$SKILL_DIR/scripts/watch.py" ]; then
 fi
 ```
 
-## Step 0 — Setup preflight (runs every `/watch` invocation, silent on success)
+## Step 0 — Setup preflight (runs every `/watch-video` invocation, silent on success)
 
 **Python interpreter:** every `python3 ...` command in this skill is for macOS/Linux. On **Windows**, substitute `python` — the `python3` command on Windows is the Microsoft Store stub and will not run the script.
 
-On the first `/watch` invocation in a session, use structured preflight so you can detect first-run setup:
+On the first `/watch-video` invocation in a session, use structured preflight so you can detect first-run setup:
 
 ```bash
 python3 "${SKILL_DIR}/scripts/setup.py" --json
@@ -57,13 +56,13 @@ Branch on two fields:
 
 A missing Whisper key is *encouraged to fix, not required*: on a genuine first run `status` will read `needs_key` even when binaries are present — that's your cue to encourage a key, not a blocker.
 
-On follow-up `/watch` calls in the same session, use the silent check:
+On follow-up `/watch-video` calls in the same session, use the silent check:
 
 ```bash
 python3 "${SKILL_DIR}/scripts/setup.py" --check
 ```
 
-This is a <100ms lookup. Exit 0 means /watch can run — this **includes a user who finished setup without a Whisper key** (keyless is allowed). On exit 0 the script emits **nothing** — proceed to Step 1 without comment. **Do NOT announce "setup is complete" to the user** — they don't need a status message on every turn. The only acceptable user-visible output from Step 0 is when remediation is required.
+This is a <100ms lookup. Exit 0 means /watch-video can run — this **includes a user who finished setup without a Whisper key** (keyless is allowed). On exit 0 the script emits **nothing** — proceed to Step 1 without comment. **Do NOT announce "setup is complete" to the user** — they don't need a status message on every turn. The only acceptable user-visible output from Step 0 is when remediation is required.
 
 On non-zero exit, follow the table:
 
@@ -103,13 +102,13 @@ Use the user's selected value. If they skip the question, keep the recommended d
 
 **Structured mode (optional):** `python3 "${SKILL_DIR}/scripts/setup.py" --json` emits `{status, can_proceed, first_run, setup_complete, missing_binaries, whisper_backend, has_api_key, config_file, watch_detail, platform}` where `status` is one of `ready | needs_install | needs_key | needs_install_and_key`. `status` describes the *ideal* state (a key is encouraged, so a keyless first run reads `needs_key`); `can_proceed` is the operational gate (binaries present AND a key is set OR setup was already completed). Branch on `can_proceed`/`first_run` to decide whether to run; use `status` to decide what to encourage.
 
-Within a single session, you can skip Step 0 on follow-up `/watch` calls — once `--check` returned 0, nothing about the environment changes between turns.
+Within a single session, you can skip Step 0 on follow-up `/watch-video` calls — once `--check` returned 0, nothing about the environment changes between turns.
 
 ## When to use
 
 - User pastes a video URL (YouTube, Vimeo, X, TikTok, Twitch clip, most yt-dlp-supported sites) and asks about it.
 - User points at a local video file (`.mp4`, `.mov`, `.mkv`, `.webm`, etc.) and asks about it.
-- User types `/watch <url-or-path> [question]`.
+- User types `/watch-video <url-or-path> [question]`.
 
 ## Recommended limits
 
@@ -131,7 +130,7 @@ Within a single session, you can skip Step 0 on follow-up `/watch` calls — onc
 
 ## How to invoke
 
-**Step 1 — parse the user input.** Separate the video source (URL or path) from any question the user asked. Example: `/watch https://youtu.be/abc what language is this in?` → source = `https://youtu.be/abc`, question = `what language is this in?`.
+**Step 1 — parse the user input.** Separate the video source (URL or path) from any question the user asked. Example: `/watch-video https://youtu.be/abc what language is this in?` → source = `https://youtu.be/abc`, question = `what language is this in?`.
 
 **Step 2 — run the watch script.** Pass the source verbatim. Do not shell-escape it yourself beyond normal quoting:
 
