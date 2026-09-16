@@ -21,27 +21,34 @@ Everyone who works in this repo needs it — see the hooks warning below.
 ## What `graphify install --project --platform claude` wrote
 
     .claude/skills/graphify/     this skill + references/
-    .claude/settings.json        PreToolUse hooks (see below)
     .claude/CLAUDE.md            skill registration line
     CLAUDE.md                    graphify usage rules (repo had no CLAUDE.md before)
+    .claude/settings.json        PreToolUse hooks — REMOVED, see below
 
 `--strict` was deliberately NOT used. It blocks the first raw file read each
 session until a `graphify query` runs.
 
-## The hooks are intrusive — read this before keeping them
+## The PreToolUse hooks were removed on purpose
 
-`.claude/settings.json` registers PreToolUse hooks on `Bash|Grep` and
-`Read|Glob`, so `graphify hook-guard` runs on essentially every tool call.
+The installer also wrote `.claude/settings.json`, registering hooks on
+`Bash|Grep` and `Read|Glob` so that `graphify hook-guard` ran on essentially
+every tool call:
 
-- With the CLI present and a graph built, it injects a "MANDATORY: run
+- With the CLI present and a graph built, it injected a "MANDATORY: run
   graphify query first" instruction into each of those calls.
-- With the CLI present and no graph, it exits 0 silently.
-- **Without the CLI it exits 127 (`graphify: not found`) on every Bash, Grep,
+- With the CLI present and no graph, it exited 0 silently.
+- **Without the CLI it exited 127 (`graphify: not found`) on every Bash, Grep,
   Read and Glob call.** Non-blocking, but noisy for anyone who clones this
   repo and has not run `uv tool install graphifyy`.
 
-To drop the hooks but keep the skill, delete the `hooks` block from
-`.claude/settings.json`. To remove everything: `graphify uninstall --purge`.
+That file held nothing but those hooks, so it was deleted outright. `/graphify`
+and every CLI command still work on demand — the only thing lost is the
+automatic nudge to query the graph before grepping.
+
+Re-running `graphify install --project` will recreate the hooks. Delete
+`.claude/settings.json` again (or just its `hooks` block, if by then it holds
+other settings worth keeping). To remove graphify entirely:
+`graphify uninstall --purge`.
 
 ## Notes
 

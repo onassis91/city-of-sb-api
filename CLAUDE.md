@@ -1,6 +1,8 @@
 ## graphify
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+This project can be mapped into a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Build it with `/graphify .`. This requires the graphify CLI (`uv tool install graphifyy`), which is per-machine and not vendored here. graphify-out/ is gitignored, so it will not exist in a fresh clone — the rules below apply only once it does.
 
 Rules:
 - For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
